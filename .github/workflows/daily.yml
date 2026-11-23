@@ -1,0 +1,145 @@
+# Daily: keep one more day of the federal 340B registry's history.
+#
+# 1. day: pulls today's export from HRSA's public 340B reports page, makes a snapshot without
+#    people, compares it with the last day kept, and makes the day's delta and report. The raw
+#    export is deleted inside the run and never uploaded.
+# 2. record: commits the delta and the report. On the first day kept in a month it also
+#    attaches a full copy to a release and names it in bases.json.
+# 3. report-failure: opens an issue when a run fails or the tripwire stops it. Nothing is kept
+#    that day; a person looks, and can run it again with "accept" ticked.
+name: daily
+
+on:
+  schedule:
+    - cron: "17 7 * * *" # 07:17 UTC, after HRSA posts the day's export
+  workflow_dispatch:
+    inputs:
+      accept:
+        description: "Keep the day even though the tripwire gave a reason (only after looking)"
+        type: boolean
+        default: false
+
+permissions:
+  contents: read
+
+concurrency:
+  group: daily
+  cancel-in-progress: false
+
+jobs:
+  day:
+    runs-on: ubuntu-24.04
+    timeout-minutes: 30
+    outputs:
+      tripwire: ${{ steps.day.outputs.tripwire }}
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          persist-credentials: false
+      - name: Check out the OPAIS library
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          repository: VVillBerchtold/clinx-radar
+          ref: ff5196dc5ab0d54c5dc4023558a1c3de1b57572b # clinx-radar 0.1.0
+          path: _opais
+          persist-credentials: false
+      - uses: astral-sh/setup-uv@68559e99cc807c1eb7e9238fd43a15bba460eec2 # v10.3.3
+        with:
+          version: "0.12.19"
+      - name: Install the locked dependencies and the browser the pull uses
+        run: |
+          uv sync --locked --project _opais --extra pull
+          uv run --project _opais --extra pull playwright install --with-deps chromium
+      - name: Pull, snapshot, compare, keep
+        id: day
+        env:
+          OPAIS_DIR: ${{ github.workspace }}/_opais
+          ACCEPT: ${{ inputs.accept || false }}
+          OUT: _out
+        run: |
+          set +e
+          tools/daily.sh
+          code=$?
+          set -e
+          if [ "$code" -eq 3 ]; then echo "tripwire=true" >> "$GITHUB_OUTPUT"; fi
+          exit "$code"
+      - name: Keep the day's files
+        if: always()
+        uses: actions/upload-artifact@cf430e030ddbb5b0abf93d22962f4752f3646cd9 # v7.0.2
+        with:
+          name: day
+          path: |
+            days/
+            _out/
+          if-no-files-found: ignore
+
+  record:
+    needs: day
+    if: ${{ needs.day.result == 'success' }}
+    runs-on: ubuntu-24.04
+    timeout-minutes: 10
+    permissions:
+      contents: write
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+      - uses: actions/download-artifact@9000827ccba6bdab643e8b6fd33ac0654aef8333 # v8.0.2
+        with:
+          name: day
+          path: _new
+      - name: Attach a full copy, when this is the month's first day
+        env:
+          GH_TOKEN: ${{ github.token }}
+          GH_REPO: ${{ github.repository }}
+        run: |
+          if [ -f _new/_out/base-day.txt ]; then
+            day="$(cat _new/_out/base-day.txt)"
+            file="_new/_out/base-$day.json.gz"
+            gh release create "base-$day" "$file" --title "Full copy of $day" \
+              --notes "The whole registry as of the export of $day, without people. Rebuild any later day with tools/history.py."
+            python3 -I - "$day" "$file" "$GH_REPO" <<'PY'
+          import hashlib, json, os, sys
+          day, path, repo = sys.argv[1:]
+          h = hashlib.sha256(open(path, "rb").read()).hexdigest()
+          doc = json.load(open("bases.json"))
+          name = os.path.basename(path)
+          doc["bases"].append({"date": day, "bytes": os.path.getsize(path), "sha256": h,
+                               "url": f"https://github.com/{repo}/releases/download/base-{day}/{name}"})
+          open("bases.json", "w").write(json.dumps(doc, indent=2) + "\n")
+          PY
+          fi
+      - name: Commit the day
+        run: |
+          line="$(cat _new/_out/line.txt 2>/dev/null || true)"
+          if [ -d _new/days ]; then cp -R _new/days/. days/; fi
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git add days bases.json
+          git diff --cached --quiet || { git commit -m "${line:-Registry: one more day}"; git push; }
+
+  report-failure:
+    needs: [day, record]
+    if: ${{ always() && (needs.day.result == 'failure' || needs.record.result == 'failure') }}
+    runs-on: ubuntu-24.04
+    timeout-minutes: 5
+    permissions:
+      issues: write
+    steps:
+      - name: Open an issue
+        env:
+          GH_TOKEN: ${{ github.token }}
+          GH_REPO: ${{ github.repository }}
+          RUN_URL: ${{ github.server_url }}/${{ github.repository }}/actions/runs/${{ github.run_id }}
+          TRIPWIRE: ${{ needs.day.outputs.tripwire }}
+        run: |
+          if [ "$TRIPWIRE" = "true" ]; then
+            title="The tripwire stopped the day of $(date -u +%F)"
+            body="The day's change looked unusual, so nothing was kept. The report is in the run's files (day, _out/report.md). If the change is real, run the job again with \"accept\" ticked.
+
+          Run: $RUN_URL"
+          else
+            title="Daily run failed on $(date -u +%F)"
+            body="The run did not pass, so nothing was kept. The run's log names the step that failed.
+
+          Run: $RUN_URL"
+          fi
+          gh issue create --title "$title" --body "$body"

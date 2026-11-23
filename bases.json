@@ -1,0 +1,10 @@
+{
+  "bases": [
+    {
+      "date": "2026-11-23",
+      "bytes": 22954091,
+      "sha256": "c7d7b5d57e583c836611c460b0cffa468801533c37e3116d47a446ec88910d0d",
+      "url": "https://github.com/VVillBerchtold/clinx-340b-registry/releases/download/base-2026-11-23/base-2026-11-23.json.gz"
+    }
+  ]
+}

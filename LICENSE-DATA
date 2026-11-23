@@ -1,0 +1,27 @@
+Data licence
+
+Copyright (c) 2026 Will Berchtold
+
+The dataset in this repository (the files in days/, the file bases.json, and the
+full copies attached to the repository's releases) is licensed under the Creative
+Commons Attribution 4.0 International licence (CC BY 4.0).
+
+You may copy, share and adapt it for any purpose, including commercially, as
+long as you give appropriate credit, link to the licence, and say if you
+changed it.
+
+The full legal text of the licence is at:
+https://creativecommons.org/licenses/by/4.0/legalcode
+
+Suggested credit:
+"340B registry history, ClinX, retrieved <date>, CC BY 4.0."
+
+What this licence does not cover:
+
+- The registry's records themselves are a public record of the U.S. Health
+  Resources and Services Administration. They are reproduced without the people
+  they name, and otherwise unchanged; no rights in them are claimed.
+- The code in tools/ is under the MIT licence (see LICENSE).
+
+The dataset is provided as is, with no warranty. Where the dataset and HRSA's
+own registry differ, HRSA's registry governs.
