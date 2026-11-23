@@ -39,6 +39,10 @@ export is deleted inside the run that read it.
 | `days/YYYY/YYYY-MM-DD.md` | The same day as a plain report: what was added, removed, terminated, reinstated or changed |
 | `tools/history.py` | Makes, applies and checks deltas; rebuilds a day |
 | `tools/daily.sh` | The daily run |
+| `tools/backfill.py` | Rebuilds the monthly history since 2010 from the dates one full copy carries |
+| `tools/site_data.py` | Packs backfill.py's tables into the file the [registry history page](https://clinx.org/registry/) draws |
+| `tools/cohorts.py`, `tools/concentration.py`, `tools/insurer.py` | The page's charts by start year, by pharmacy size and by pharmacy owner |
+| `tools/whose_facts.py` | Every figure in the analysis [Whose pharmacies?](https://clinx.org/writing/whose-pharmacies/) |
 
 A full copy for the whole country is about 300 MB of JSON. Keeping one a day would grow by
 gigabytes a year, and most entities do not change from one day to the next. So a day is kept as
@@ -63,6 +67,23 @@ python3 -I tools/history.py apply base-2026-11-23.json.gz day.json days/2026/202
 
 `apply` stops if a delta does not follow on from the day before it. Every delta is checked when
 it is made: the new day is rebuilt from it and compared with the export's snapshot.
+
+## The history before the daily record
+
+The daily record starts on 23 November 2026. The monthly history back to 2010 on
+[clinx.org/registry](https://clinx.org/registry/) is rebuilt from one full copy: every arrangement
+keeps its begin date and, once ended, its termination date, and every entity keeps its own. An
+arrangement is counted in force on a day D when it began on or before D and D is before its own
+termination date and its entity's. That is today's record of the past, not a copy of the past:
+records removed outright are missing, so the rebuild counts 2 to 7% fewer arrangements than were
+published in each year since 2017, and later corrections of dates show. "Out of state" compares
+the pharmacy's address with the entity's street address. Chains and insurer-owned pharmacies are
+matched by name, because the registry records no owner.
+
+```bash
+python3 -I tools/backfill.py base.json out/
+python3 -I tools/whose_facts.py base.json whose.json
+```
 
 ## Each day's run
 
