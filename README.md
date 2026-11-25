@@ -1,8 +1,8 @@
 <p>
   <a href="https://clinx.org">
     <picture>
-      <source media="(prefers-color-scheme: dark)" srcset="https://raw.githubusercontent.com/VVillBerchtold/clinx-org/main/public/brand/clinx-wordmark-on-dark.svg">
-      <img src="https://raw.githubusercontent.com/VVillBerchtold/clinx-org/main/public/brand/clinx-wordmark-on-light.svg" alt="ClinX" height="28">
+      <source media="(prefers-color-scheme: dark)" srcset="https://raw.githubusercontent.com/WillBerchtold/clinx-org/main/public/brand/clinx-wordmark-on-dark.svg">
+      <img src="https://raw.githubusercontent.com/WillBerchtold/clinx-org/main/public/brand/clinx-wordmark-on-light.svg" alt="ClinX" height="28">
     </picture>
   </a>
 </p>
@@ -26,7 +26,7 @@ dates.
 
 People are not kept. The export names an authorizing official and a primary contact for each
 entity. Those, pharmacy phone numbers and free-text comments are dropped when the file is read,
-by [clinx-radar](https://github.com/VVillBerchtold/clinx-radar), and never stored. The raw
+by [clinx-radar](https://github.com/WillBerchtold/clinx-radar), and never stored. The raw
 export is deleted inside the run that read it.
 
 ## How it is laid out
@@ -121,5 +121,5 @@ The code in `tools/` is under the MIT licence ([LICENSE](LICENSE)). The data (`d
 credit: "340B registry history, ClinX, CC BY 4.0."
 
 The rest of ClinX: [clinx.org](https://clinx.org), the state filings in
-[clinx-340b](https://github.com/VVillBerchtold/clinx-340b), bills and the calendar in
-[clinx-340b-bills](https://github.com/VVillBerchtold/clinx-340b-bills).
+[clinx-340b](https://github.com/WillBerchtold/clinx-340b), bills and the calendar in
+[clinx-340b-bills](https://github.com/WillBerchtold/clinx-340b-bills).
