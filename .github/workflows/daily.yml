@@ -39,7 +39,7 @@ jobs:
       - name: Check out the OPAIS library
         uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
         with:
-          repository: VVillBerchtold/clinx-radar
+          repository: WillBerchtold/clinx-radar
           ref: ff5196dc5ab0d54c5dc4023558a1c3de1b57572b # clinx-radar 0.1.0
           path: _opais
           persist-credentials: false
